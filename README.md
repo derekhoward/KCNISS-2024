@@ -2,7 +2,9 @@
 ## Intro to Single Cell Transcriptomics
 
 **Analysis of human brain single cell gene expression data in health and disease.** 
+
 Day1: How to define celltypes using gene expression?
+
 Day2: How can we use single cell data to define cell-type specific gene expression changes in brain disorders?
 
 ### What’s this project about? 
@@ -38,7 +40,27 @@ Seurat tutorials:
 
 - [Pseudobulk differential expression tutorial](https://hbctraining.github.io/scRNA-seq/lessons/pseudobulk_DESeq2_scrnaseq.html)
 
-## Datasets
+## Setup
+### Required Software and Packages
+
+We suggest following [these instructions](https://rstudio-education.github.io/hopr/starting.html#how-to-download-and-install-r) for installing R and Rstudio depending on your operating system.
+
+Before starting the workshop, please make sure to install R, Rstudio and the following R packages:
+
+```r
+install.packages("here", "tidyverse", "Seurat")
+
+# Other useful packages
+install.packages(c("ggpubr", "cowplot", "ggrepel"))
+
+# Install Bioconductor packages for differential expression analysis
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install(c("edgeR", "limma"))
+
+```
+
+### Datasets
 Download the datasets from:
 https://drive.google.com/drive/folders/1VOGGuPjDT49vz95mk4huWOIX9s9-FIQ8?usp=sharing
 
