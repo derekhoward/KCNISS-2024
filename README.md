@@ -1,7 +1,7 @@
 # KCNI Summer School 2024
 ## Intro to Single Cell Transcriptomics
 
-**Analysis of human brian single cell gene expression data in health and disease.** 
+**Analysis of human brain single cell gene expression data in health and disease.** 
 Day1: How to define celltypes using gene expression?
 Day2: How can we use single cell data to define cell-type specific gene expression changes in brain disorders?
 
