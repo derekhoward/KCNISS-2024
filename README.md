@@ -2,17 +2,17 @@
 ## Intro to Single Cell Transcriptomics
 
 **Analysis of human brian single cell gene expression data in health and disease.** 
-How to define celltypes using gene expression?
-How can we use single cell data to define cell-type specific gene expression changes in brain disorders?
+Day1: How to define celltypes using gene expression?
+Day2: How can we use single cell data to define cell-type specific gene expression changes in brain disorders?
 
 ### What’s this project about? 
 
-**Main idea:** perform integrative analysis of two human neocortical single-cell datasets, which will lead into an analysis of cell type-specific differential gene expression between individuals with dementia and controls.
+**Main idea:** perform analysis of two human neocortical single-cell datasets, which will lead into an analysis of cell type-specific differential gene expression between individuals with dementia and controls.
 
 **Key questions:**
 
-1. How does gene expression compare between cell types defined by SMART-seq vs. those defined by 10x sequencing?
-    - Are certain cell types better defined by one method relative to the other?
+1. How can we visualize and define cell-types by their gene expression patterns?
+
 2. How does cell type-specific gene expression change in the context of dementia?
     - What types of genes are most affected by the condition within a given cell type?
 
