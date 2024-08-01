@@ -1,4 +1,4 @@
-# KCNI Summer School 2023
+# KCNI Summer School 2024
 ## Intro to Single Cell Transcriptomics
 
 **Integrative analysis of human SMART-seq and 10x single-cell gene expression data.** 
