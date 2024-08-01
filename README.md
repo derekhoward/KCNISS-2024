@@ -1,8 +1,9 @@
 # KCNI Summer School 2024
 ## Intro to Single Cell Transcriptomics
 
-**Integrative analysis of human SMART-seq and 10x single-cell gene expression data.** 
-How do the methodologies compare in defining cell types, and how can we use single-cell data for case-control analyses?
+**Analysis of human brian single cell gene expression data in health and disease.** 
+How to define celltypes using gene expression?
+How can we use single cell data to define cell-type specific gene expression changes in brain disorders?
 
 ### What’s this project about? 
 
