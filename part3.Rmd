@@ -318,26 +318,16 @@ dge <- calcNormFactors(dge, method = "TMM")
 ```
 
 ### Set up design based on the factors defined above
-For modeling AD, we have two options: treat it as a binary variable, or use the continuous AD pathology score that has been provided. Let's try both!
+For modeling AD, we have two options: treat it as a binary variable, or use the continuous AD pathology score that has been provided. Let's focus on the continuous AD pathology score!
 
-#### 1. Binary
-```{r}
-design_bin <- model.matrix(~ age + pmi + sex + log10(cells_per_donor) + log10(library_size) + disease) 
 
-### Perform voom transformation
-vm_bin <- voom(dge, design_bin, plot = TRUE)
-
-### Perform lmFit and eBayes
-fit_bin <- lmFit(vm_bin, design_bin)
-fit_bin <- eBayes(fit_bin)
-```
 Note the plot that **voom** outputs. We can see here that there's a steady decline in standard deviation (variation) as count size (mean expression) increases. If you go back and include the genes that *aren't* expressed in at least 80% of the samples, you would see a slightly different relationship, where for low mean expression values, variance increases with mean expression. This is called **overdispersion**, and it is essential that we try and correct for this before running voom to produce more stable variance estimates, thereby producing more reliable differential expression results.
 
 **lmFit** is performing linear modeling, fitting a linear model to the voom-transformed data with the specified design matrix, allowing for the estimation of coefficients (gene expression differences) and their standard errors for each gene. 
 
 **eBayes** is applying empirical Bayes shrinkage to these coefficient estimates, which stabilizes the variances and provides moderated t-statistics, improving the reliability of differential expression analysis results.
 
-#### 2. Continuous
+#### Continuous neuropath_score
 ```{r}
 design_con <- model.matrix(~ age + pmi + sex + log10(cells_per_donor) + log10(library_size) + neuropath_score) 
 # neuropath score here is the continuous pseudoprogression score 
@@ -363,15 +353,6 @@ To pull the DGE results, we use a function called **topTable**. Here, we will sp
 ```{r}
 # What are our coefficients called again?
 fit_con$cov.coefficients %>% knitr::kable()
-
-### Binary
-deg_table_sex_bin = topTable(fit_bin, coef = "sexMale",  n = Inf, sort = "none", 
-                         adjust.method = "BH")
-
-deg_table_sex_bin %>% 
-  arrange(adj.P.Val) %>% 
-  head() %>% 
-  knitr::kable()
 
 ### Continuous
 deg_table_sex_con = topTable(fit_con, coef = "sexMale",  n = Inf, sort = "none", 
@@ -408,15 +389,6 @@ What separates the genes from the left and right hand sides of the plot? Does th
 #### Analyze genes associated with disease
 Next, let's pull out the DEGs for our disease variable.
 ```{r}
-### Binary
-deg_table_disease_bin = topTable(fit_bin, coef = "diseasedementia",  n = Inf, sort = "none", 
-                             adjust.method = "BH")
-
-deg_table_disease_bin %>% 
-  arrange(adj.P.Val) %>% 
-  head(20) %>% 
-  knitr::kable()
-
 ### Continuous
 deg_table_disease_con = topTable(fit_con, coef = "neuropath_score",  n = Inf, sort = "none", 
                              adjust.method = "BH")
@@ -427,22 +399,10 @@ deg_table_disease_con %>%
   knitr::kable()
 ```
 
-Notice that treating disease as binary versus continuous completely changes our top genes!
+Treating disease as binary versus continuous completely changes our top genes!
 
 #### Volcano plot of genes associated with disease
 ```{r}
-### Binary
-deg_table_disease_bin %>% 
-  ggplot(aes(x = logFC, y = -log10(P.Value), label = feature_name)) + 
-  geom_point() +
-  geom_text_repel(data = subset(deg_table_disease_bin, adj.P.Val < 0.1), 
-                  aes(label = feature_name), 
-                  vjust = 1.5) + 
-  geom_point(data = subset(deg_table_disease_bin, adj.P.Val < 0.1), 
-             aes(color = 'red')) + 
-  theme_cowplot() +
-  theme(legend.position = "none")
-
 ### Continuous
 deg_table_disease_con %>% 
   ggplot(aes(x = logFC, y = -log10(P.Value), label = feature_name)) + 
@@ -458,29 +418,10 @@ deg_table_disease_con %>%
 
 Comparing this volcano plot to our earlier one, we can see there are far fewer DEGs in our binary AD condition than between the sexes. Why might this be the case?
 
-Now plotting our continuous AD metric, we can see that there are MANY more DEGs. Why do you think that is?
+Now plotting our continuous AD metric, we can see that there are MANY more DEGs compared to when . Why do you think that is?
 
 #### Plot gene expression of a couple of DE genes below
 Let's now plot some of the DE genes from above to highlight their expression changes between cases and controls.
-##### Binary
-```{r}
-### Binary
-col8a1_plot <- ggplot(pseudobulk_astro_cpm[use_subjects, ],
-  aes(x = disease, y = log2(COL8A1+1), fill = disease)) + 
-  ylab('COL8A1 mRNA expr (log2 CPM+1)') + 
-  geom_boxplot() + 
-  stat_compare_means() + 
-  theme_cowplot() 
-
-lrrc7_plot <- ggplot(pseudobulk_astro_cpm[use_subjects, ],
-  aes(x = disease, y = log2(`LRRC7-AS1`+1), fill = disease)) + 
-  ylab('LRRC7-AS1 mRNA expr (log2 CPM+1)') + 
-  geom_boxplot() + 
-  theme_cowplot() +
-  stat_compare_means()
-
-col8a1_plot + lrrc7_plot
-```
 
 ##### Continuous
 ```{r, warning=FALSE, message=FALSE}
@@ -505,108 +446,3 @@ slc28a2_plot <- ggplot(pseudobulk_astro_cpm[use_subjects, ],
 col8a1_plot + slc28a2_plot
 ```
 
-## Gene ontology analysis
-So, we have a few lists of DE genes—now what? One thing you can do after you know which genes are up- and down-regulated across conditions is to perform a gene ontology or GO analysis. This will allow you to see if there are any functions or pathways that are enriched among your list of genes. 
-
-### Sex
-#### Get gene lists
-Let's grab the names of the significantly up-regulated and down-regulated genes from our earlier table. Note that we order these lists so that the genes that change the most are at the top.
-```{r}
-# Genes that have higher expression in males relative to females
-male_up_ordered <- deg_table_sex_con %>% 
-  filter(P.Value < 0.05 & logFC > 0) %>% 
-  arrange(desc(logFC)) %>% 
-  .$gene_symbol
-
-# Genes that have lower expression in males relative to females
-male_down_ordered <- deg_table_sex_con %>% 
-  filter(P.Value < 0.05 & logFC < 0) %>% 
-  arrange(logFC) %>% 
-  .$gene_symbol
-```
-
-#### Enrichment analysis
-We can now supply our ordered gene lists to a function from the package *gprofiler2* called **gost**. Note that we indicate that our query is ordered—this will factor into the significance calculations for our enriched terms. 
-
-There are a variety of sources for gene ontology terms you can select. We'll grab biological processes (GO:BP), cellular components (GO:CC), and molecular functions (GO:MF).
-
-We can then grab the most significant terms from each of those sources within the up- and down-regulated queries separately. This is useful for selecting terms to highlight in visualizations!
-```{r}
-gp_sex <- gost(list("up-regulated" = male_up_ordered,
-	  "down-regulated" = male_down_ordered), organism = "hsapiens",
-		        ordered_query = TRUE, sources = c("GO:BP", "GO:CC", "GO:MF"))
-
-# Top terms
-gp_sex_terms <- gp_sex$result %>% 
-  group_by(query, source) %>% 
-  slice_min(order_by = p_value, n = 2) %>% 
-  .$term_id
-```
-
-#### Plot results
-There are many ways to highlight GO terms. Here's one that is built in with *gprofiler2* that can be used to highlight GO terms with high -log10(p-adj) values.
-
-Don't focus too much on the code of this plot, this is just a demonstration of how much you can tweak these figures to improve the aesthetic.
-```{r}
-gostplot(gp_sex, capped = FALSE, interactive = FALSE, 
-         pal = list(`GO:MF` = "#6DC8E8", `GO:CC` = "#FF9179", `GO:BP` = "#57BCAC")) +
-  geom_text_repel(mapping = aes(label = ifelse(gp_sex$result$term_id %in% 
-                                                 gp_sex_terms,
-                                               term_name, "")), 
-                  force = 40, max.overlaps = Inf, size = 3) +
-  geom_point(size = 3, colour = ifelse(gp_sex$result$term_id %in% 
-                                                 gp_sex_terms,
-                                       "black", "white"),
-             alpha = ifelse(gp_sex$result$term_id %in% 
-                                                 gp_sex_terms,
-                                       1, 0))
-```
-
-Can you make sense of any of these terms?
-
-### AD Neuropathology - associated genes
-#### Get gene lists
-```{r}
-# Genes that have higher expression in individuals with dementia relative to controls
-disease_up_ordered <- deg_table_disease_con %>% 
-  filter(adj.P.Val < 0.1 & logFC > 0) %>% 
-  arrange(desc(logFC)) %>% 
-  pull(gene_symbol)
-
-# Genes that have lower expression in individuals with dementia relative to controls
-disease_down_ordered <- deg_table_disease_con %>% 
-  filter(adj.P.Val < 0.1 & logFC < 0) %>% 
-  arrange(logFC) %>% 
-  pull(gene_symbol)
-```
-
-#### Enrichment analysis
-```{r}
-gp_disease <- gost(list("up-regulated" = disease_up_ordered,
-	  "down-regulated" = disease_down_ordered), organism = "hsapiens",
-		        ordered_query = TRUE, sources = c("GO:BP", "GO:CC", "GO:MF"))
-
-# Top terms
-gp_disease_terms <- gp_disease$result %>% 
-  group_by(query, source) %>% 
-  slice_min(order_by = p_value, n = 2) %>% 
-  pull(term_id)
-```
-
-#### Plot results
-```{r}
-gostplot(gp_disease, capped = FALSE, interactive = FALSE, 
-         pal = list(`GO:MF` = "#6DC8E8", `GO:CC` = "#FF9179", `GO:BP` = "#57BCAC")) +
-  geom_text_repel(mapping = aes(label = ifelse(gp_disease$result$term_id %in% 
-                                                 gp_disease_terms,
-                                               term_name, "")), 
-                  force = 40, max.overlaps = Inf,size = 3) +
-  geom_point(size = 3, colour = ifelse(gp_disease$result$term_id %in% 
-                                                 gp_disease_terms,
-                                       "black", "white"),
-             alpha = ifelse(gp_disease$result$term_id %in% 
-                                                 gp_disease_terms,
-                                       1, 0))
-```
-
-Finally, do you see any terms that make sense as being affected by AD?
